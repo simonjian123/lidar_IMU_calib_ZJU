@@ -43,6 +43,7 @@
 
 #include <pcl/registration/icp.h>
 #include <pcl/registration/bfgs.h>
+#include <boost/smart_ptr/shared_ptr.hpp>
 
 namespace pclomp
 {

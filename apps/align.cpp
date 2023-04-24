@@ -12,7 +12,8 @@
 #include <pclomp/gicp_omp.h>
 
 // align point clouds and measure processing time
-pcl::PointCloud<pcl::PointXYZ>::Ptr align(pcl::Registration<pcl::PointXYZ, pcl::PointXYZ>::Ptr registration, const pcl::PointCloud<pcl::PointXYZ>::Ptr& target_cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr& source_cloud ) {
+template <class RegistrationType>
+pcl::PointCloud<pcl::PointXYZ>::Ptr align(RegistrationType registration, const pcl::PointCloud<pcl::PointXYZ>::Ptr& target_cloud, const pcl::PointCloud<pcl::PointXYZ>::Ptr& source_cloud ) {
   registration->setInputTarget(target_cloud);
   registration->setInputSource(source_cloud);
   pcl::PointCloud<pcl::PointXYZ>::Ptr aligned(new pcl::PointCloud<pcl::PointXYZ>());
@@ -73,17 +74,17 @@ int main(int argc, char** argv) {
   // benchmark
   std::cout << "--- pcl::GICP ---" << std::endl;
   pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ>::Ptr gicp(new pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ>());
-  pcl::PointCloud<pcl::PointXYZ>::Ptr aligned = align(gicp, target_cloud, source_cloud);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr aligned = align<pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ>::Ptr>(gicp, target_cloud, source_cloud);
 
   std::cout << "--- pclomp::GICP ---" << std::endl;
   pclomp::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ>::Ptr gicp_omp(new pclomp::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ>());
-  aligned = align(gicp_omp, target_cloud, source_cloud);
+  aligned = align<pclomp::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ>::Ptr>(gicp_omp, target_cloud, source_cloud);
 
 
   std::cout << "--- pcl::NDT ---" << std::endl;
   pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>::Ptr ndt(new pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>());
   ndt->setResolution(1.0);
-  aligned = align(ndt, target_cloud, source_cloud);
+  aligned = align<pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>::Ptr>(ndt, target_cloud, source_cloud);
 
   std::vector<int> num_threads = {1, omp_get_max_threads()};
   std::vector<std::pair<std::string, pclomp::NeighborSearchMethod>> search_methods = {
@@ -100,7 +101,7 @@ int main(int argc, char** argv) {
       std::cout << "--- pclomp::NDT (" << search_method.first << ", " << n << " threads) ---" << std::endl;
       ndt_omp->setNumThreads(n);
       ndt_omp->setNeighborhoodSearchMethod(search_method.second);
-      aligned = align(ndt_omp, target_cloud, source_cloud);
+      aligned = align<pclomp::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ>::Ptr>(ndt_omp, target_cloud, source_cloud);
     }
   }
 
